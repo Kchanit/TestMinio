@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"context"
 	"log"
 	"os"
 	"time"
@@ -16,8 +15,8 @@ type Credentials struct {
 }
 
 func UploadInvoice() {
-	ctx := context.Background()
-	endpoint := "https://storage.ratchaphon1412.co"
+	// endpoint := "https://minio.ratchaphon1412.co"
+	endpoint := "localhost:9000"
 	accessKeyID := os.Getenv("MINIO_ACCESS_KEY")
 	secretAccessKey := os.Getenv("MINIO_SECRET_KEY")
 	useSSL := false
@@ -27,10 +26,13 @@ func UploadInvoice() {
 		Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
 		Secure: useSSL,
 	})
+
 	// Initialize default config
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalln("Failed to initialize minio client", err)
 	}
+
+	log.Printf("minioClient: %v\n", minioClient)
 
 	bucketName := "pixelmanstorage"
 	location := "us-east-1"
@@ -41,7 +43,7 @@ func UploadInvoice() {
 		if errBucketExists == nil && exists {
 			log.Printf("We already own %s\n", bucketName)
 		} else {
-			log.Fatalln(err)
+			log.Fatalln("Failed to create bucket", err)
 		}
 	} else {
 		log.Printf("Successfully created %s\n", bucketName)
@@ -54,8 +56,9 @@ func UploadInvoice() {
 	// Upload the test file with FPutObject
 	info, err := minioClient.FPutObject(ctx, bucketName, objectName, filePath, minio.PutObjectOptions{ContentType: contentType})
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalln("Failed to upload file", err)
 	}
 
 	log.Printf("Successfully uploaded %s of size %d\n", objectName, info.Size)
+	// save file name to database
 }

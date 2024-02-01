@@ -4,6 +4,7 @@ import (
 	domain "invoice-test/domains"
 	"invoice-test/utils"
 	"log"
+	"os"
 	"strconv"
 	"time"
 
@@ -87,7 +88,6 @@ func GenerateInvoice(customer domain.User, products []domain.Product, ref string
 	}
 
 	// Implement upload to minio
-
 	err = pdf.OutputFileAndClose("out.pdf")
 
 	if err != nil {
@@ -124,5 +124,22 @@ func main() {
 	ref := "trx10281723"
 	GenerateInvoice(customer, products, ref)
 
-	utils.UploadInvoice()
+	invoiceFilePath := "./out.pdf"
+	bucketName := "pixelmanstorage"
+	objectName := "invoices/" + ref + time.Now().Format("2006-01-02") + ".pdf"
+
+	// Get Minio client instance
+	minioClientInstance, err := utils.GetMinioClient()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Upload PDF file to Minio
+	err = minioClientInstance.UploadImage(bucketName, objectName, invoiceFilePath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	os.Remove(invoiceFilePath)
+	log.Println("PDF file uploaded successfully.")
 }
